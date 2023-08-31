@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/hibiken/asynq/internal/base"
+	"github.com/redis/go-redis/v9"
 )
 
 // Task represents a unit of work to be performed.
@@ -128,6 +128,8 @@ type TaskInfo struct {
 	// Result holds the result data associated with the task.
 	// Use ResultWriter to write result data from the Handler.
 	Result []byte
+
+	ShutDown chan struct{}
 }
 
 // If t is non-zero, returns time converted from t as unix time in seconds.
@@ -438,10 +440,11 @@ func (opt RedisClusterClientOpt) MakeRedisClient() interface{} {
 //
 // Three URI schemes are supported, which are redis:, rediss:, redis-socket:, and redis-sentinel:.
 // Supported formats are:
-//     redis://[:password@]host[:port][/dbnumber]
-//     rediss://[:password@]host[:port][/dbnumber]
-//     redis-socket://[:password@]path[?db=dbnumber]
-//     redis-sentinel://[:password@]host1[:port][,host2:[:port]][,hostN:[:port]][?master=masterName]
+//
+//	redis://[:password@]host[:port][/dbnumber]
+//	rediss://[:password@]host[:port][/dbnumber]
+//	redis-socket://[:password@]path[?db=dbnumber]
+//	redis-sentinel://[:password@]host1[:port][,host2:[:port]][,hostN:[:port]][?master=masterName]
 func ParseRedisURI(uri string) (RedisConnOpt, error) {
 	u, err := url.Parse(uri)
 	if err != nil {
@@ -535,10 +538,20 @@ type ResultWriter struct {
 func (w *ResultWriter) Write(data []byte) (n int, err error) {
 	select {
 	case <-w.ctx.Done():
-		return 0, fmt.Errorf("failed to result task result: %v", w.ctx.Err())
+		return 0, fmt.Errorf("failed to write task result: %v", w.ctx.Err())
 	default:
 	}
 	return w.broker.WriteResult(w.qname, w.id, data)
+}
+
+// Publish publishes the given data to the task channel.
+func (w *ResultWriter) Publish(data []byte) (n int, err error) {
+	select {
+	case <-w.ctx.Done():
+		return 0, fmt.Errorf("failed to publish task result: %v", w.ctx.Err())
+	default:
+	}
+	return w.broker.Publish(w.qname, w.id, data)
 }
 
 // TaskID returns the ID of the task the ResultWriter is associated with.

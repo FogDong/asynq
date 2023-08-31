@@ -28,6 +28,7 @@ const LeaseDuration = 30 * time.Second
 type RDB struct {
 	client redis.UniversalClient
 	clock  timeutil.Clock
+	done   chan struct{}
 }
 
 // NewRDB returns a new instance of RDB.
@@ -1516,6 +1517,16 @@ func (r *RDB) WriteResult(qname, taskID string, data []byte) (int, error) {
 	taskKey := base.TaskKey(qname, taskID)
 	if err := r.client.HSet(ctx, taskKey, "result", data).Err(); err != nil {
 		return 0, errors.E(op, errors.Unknown, &errors.RedisCommandError{Command: "hset", Err: err})
+	}
+	return len(data), nil
+}
+
+func (r *RDB) Publish(qname, taskID string, data []byte) (int, error) {
+	var op errors.Op = "rdb.Publish"
+	ctx := context.Background()
+	taskKey := base.TaskKey(qname, taskID)
+	if err := r.client.Publish(ctx, taskKey, data).Err(); err != nil {
+		return 0, errors.E(op, errors.Unknown, &errors.RedisCommandError{Command: "publish", Err: err})
 	}
 	return len(data), nil
 }
