@@ -121,6 +121,9 @@ type TaskInfo struct {
 	// Retention is duration of the retention period after the task is successfully processed.
 	Retention time.Duration
 
+	// CreatedAt is the time when the task was created.
+	CreatedAt time.Time
+
 	// CompletedAt is the time when the task is processed successfully.
 	// Zero value (i.e. time.Time{}) indicates no value.
 	CompletedAt time.Time
@@ -154,6 +157,7 @@ func newTaskInfo(msg *base.TaskMessage, state base.TaskState, nextProcessAt time
 		Retention:     time.Duration(msg.Retention) * time.Second,
 		NextProcessAt: nextProcessAt,
 		LastFailedAt:  fromUnixTimeOrZero(msg.LastFailedAt),
+		CreatedAt:     fromUnixTimeOrZero(msg.CreatedAt),
 		CompletedAt:   fromUnixTimeOrZero(msg.CompletedAt),
 		Result:        result,
 	}

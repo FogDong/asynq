@@ -38,6 +38,8 @@ const (
 	AllSchedulers = "asynq:schedulers" // ZSET
 	AllQueues     = "asynq:queues"     // SET
 	CancelChannel = "asynq:cancel"     // PubSub channel
+
+	DefaultQueueSize = 8192 // Default queue size for a queue.
 )
 
 // TaskState denotes the state of a task.
@@ -120,6 +122,10 @@ func TaskKey(qname, id string) string {
 // PendingKey returns a redis key for the given queue name.
 func PendingKey(qname string) string {
 	return fmt.Sprintf("%spending", QueueKeyPrefix(qname))
+}
+
+func QueueFullKey(qname string) string {
+	return fmt.Sprintf("%squeue_full", QueueKeyPrefix(qname))
 }
 
 // ActiveKey returns a redis key for the active tasks.
@@ -246,6 +252,9 @@ type TaskMessage struct {
 	// Queue is a name this message should be enqueued to.
 	Queue string
 
+	// QueueSize is the size of the queue.
+	QueueSize int
+
 	// Retry is the max number of retry for this task.
 	Retry int
 
@@ -288,6 +297,12 @@ type TaskMessage struct {
 
 	// Retention specifies the number of seconds the task should be retained after completion.
 	Retention int64
+
+	// CreatedAt is the time when the task was created in Unix time,
+	// the number of seconds elapsed since January 1, 1970 UTC.
+	//
+	// Use zero to indicate no value.
+	CreatedAt int64
 
 	// CompletedAt is the time the task was processed successfully in Unix time,
 	// the number of seconds elapsed since January 1, 1970 UTC.
@@ -718,6 +733,7 @@ type Broker interface {
 	Enqueue(ctx context.Context, msg *TaskMessage) error
 	EnqueueUnique(ctx context.Context, msg *TaskMessage, ttl time.Duration) error
 	Dequeue(qnames ...string) (*TaskMessage, time.Time, error)
+	CancelTask(ctx context.Context, qname, taskID string) error
 	Done(ctx context.Context, msg *TaskMessage) error
 	MarkAsComplete(ctx context.Context, msg *TaskMessage) error
 	Requeue(ctx context.Context, msg *TaskMessage) error
@@ -726,6 +742,7 @@ type Broker interface {
 	Retry(ctx context.Context, msg *TaskMessage, processAt time.Time, errMsg string, isFailure bool) error
 	Archive(ctx context.Context, msg *TaskMessage, errMsg string) error
 	ForwardIfReady(qnames ...string) error
+	FindAndPendingQueueFullTask(ctx context.Context, queue string) error
 
 	// Group aggregation related methods
 	AddToGroup(ctx context.Context, msg *TaskMessage, gname string) error
