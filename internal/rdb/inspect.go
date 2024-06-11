@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/redis/go-redis/v9"
 	"github.com/hibiken/asynq/internal/base"
 	"github.com/hibiken/asynq/internal/errors"
+	"github.com/redis/go-redis/v9"
 	"github.com/spf13/cast"
 )
 
@@ -523,10 +523,12 @@ func (r *RDB) GetTaskInfo(qname, id string) (*base.TaskInfo, error) {
 	if err != nil {
 		return nil, errors.E(op, errors.Internal, "unexpected value returned from Lua script")
 	}
+	fmt.Println("============decode from encoded============", encoded)
 	msg, err := base.DecodeMessage([]byte(encoded))
 	if err != nil {
 		return nil, errors.E(op, errors.Internal, "could not decode task message")
 	}
+	fmt.Println("============decode msg============", msg.CreatedAt, msg.ProcessedAt)
 	state, err := base.TaskStateFromString(stateStr)
 	if err != nil {
 		return nil, errors.E(op, errors.CanonicalCode(err), err)

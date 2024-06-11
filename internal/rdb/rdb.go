@@ -123,6 +123,8 @@ return 2
 func (r *RDB) Enqueue(ctx context.Context, msg *base.TaskMessage) error {
 	var op errors.Op = "rdb.Enqueue"
 	encoded, err := base.EncodeMessage(msg)
+	fmt.Println("============msg============", msg.CreatedAt, msg.ProcessedAt)
+	fmt.Println("============encoded============", string(encoded))
 	if err != nil {
 		return errors.E(op, errors.Unknown, fmt.Sprintf("cannot encode message: %v", err))
 	}
