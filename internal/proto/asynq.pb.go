@@ -211,6 +211,20 @@ func (x *TaskMessage) GetCompletedAt() int64 {
 	return 0
 }
 
+func (x *TaskMessage) GetCreatedAt() int64 {
+	if x != nil {
+		return x.CreatedAt
+	}
+	return 0
+}
+
+func (x *TaskMessage) GetProcessedAt() int64 {
+	if x != nil {
+		return x.ProcessedAt
+	}
+	return 0
+}
+
 // ServerInfo holds information about a running server.
 type ServerInfo struct {
 	state         protoimpl.MessageState

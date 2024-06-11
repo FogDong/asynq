@@ -92,6 +92,8 @@ func TaskStateFromString(s string) (TaskState, error) {
 		return TaskStateCompleted, nil
 	case "aggregating":
 		return TaskStateAggregating, nil
+	case "queue_full":
+		return TaskStateQueueFull, nil
 	}
 	return 0, errors.E(errors.FailedPrecondition, fmt.Sprintf("%q is not supported task state", s))
 }
@@ -360,6 +362,8 @@ func DecodeMessage(data []byte) (*TaskMessage, error) {
 		GroupKey:     pbmsg.GetGroupKey(),
 		Retention:    pbmsg.GetRetention(),
 		CompletedAt:  pbmsg.GetCompletedAt(),
+		CreatedAt:    pbmsg.GetCreatedAt(),
+		ProcessedAt:  pbmsg.GetProcessedAt(),
 	}, nil
 }
 
