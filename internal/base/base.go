@@ -53,6 +53,7 @@ const (
 	TaskStateArchived
 	TaskStateCompleted
 	TaskStateAggregating // describes a state where task is waiting in a group to be aggregated
+	TaskStateQueueFull
 )
 
 func (s TaskState) String() string {
@@ -309,6 +310,8 @@ type TaskMessage struct {
 	//
 	// Use zero to indicate no value.
 	CompletedAt int64
+
+	ProcessedAt int64
 }
 
 // EncodeMessage marshals the given task message and returns an encoded bytes.
@@ -331,6 +334,8 @@ func EncodeMessage(msg *TaskMessage) ([]byte, error) {
 		GroupKey:     msg.GroupKey,
 		Retention:    msg.Retention,
 		CompletedAt:  msg.CompletedAt,
+		CreatedAt:    msg.CreatedAt,
+		ProcessedAt:  msg.ProcessedAt,
 	})
 }
 

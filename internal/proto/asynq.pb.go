@@ -77,6 +77,8 @@ type TaskMessage struct {
 	// the number of seconds elapsed since January 1, 1970 UTC.
 	// This field is populated if result_ttl > 0 upon completion.
 	CompletedAt int64 `protobuf:"varint,13,opt,name=completed_at,json=completedAt,proto3" json:"completed_at,omitempty"`
+	CreatedAt int64 `protobuf:"varint,15,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	ProcessedAt int64 `protobuf:"varint,16,opt,name=processed_at,json=processedAt,proto3" json:"processed_at,omitempty"`
 }
 
 func (x *TaskMessage) Reset() {

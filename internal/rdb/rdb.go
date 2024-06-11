@@ -102,12 +102,12 @@ if redis.call("EXISTS", KEYS[1]) == 1 then
 	return 0
 end
 
-if redis.call("LLEN", KEYS[2]) >= tonumber(ARGV[4]) then
+if redis.call("LLEN", KEYS[2]) + redis.call("LLEN", KEYS[3]) + redis.call("LLEN", KEYS[4]) + redis.call("LLEN", KEYS[5]) >= tonumber(ARGV[4]) then
     redis.call("HSET", KEYS[1],
                "msg", ARGV[1],
                "state", "queue_full",
                "queue_full_since", ARGV[3])
-		redis.call("LPUSH", KEYS[3], ARGV[2])
+		redis.call("LPUSH", KEYS[6], ARGV[2])
 		return 1
 end
 
@@ -132,6 +132,9 @@ func (r *RDB) Enqueue(ctx context.Context, msg *base.TaskMessage) error {
 	keys := []string{
 		base.TaskKey(msg.Queue, msg.ID),
 		base.PendingKey(msg.Queue),
+		base.ActiveKey(msg.Queue),
+		base.ScheduledKey(msg.Queue),
+		base.PausedKey(msg.Queue),
 		base.QueueFullKey(msg.Queue),
 	}
 	queueSize := msg.QueueSize
