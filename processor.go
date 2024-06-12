@@ -172,7 +172,7 @@ func (p *processor) exec() {
 	case p.sema <- struct{}{}: // acquire token
 		qnames := p.queues()
 		msg, leaseExpirationTime, err := p.broker.Dequeue(qnames...)
-		fmt.Println("============processed at==========", msg.ProcessedAt)
+		fmt.Println("============processed at==========", msg)
 		switch {
 		case errors.Is(err, errors.ErrNoProcessableTask):
 			p.logger.Debug("All queues are empty")
