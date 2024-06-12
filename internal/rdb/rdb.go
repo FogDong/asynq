@@ -123,8 +123,6 @@ return 2
 func (r *RDB) Enqueue(ctx context.Context, msg *base.TaskMessage) error {
 	var op errors.Op = "rdb.Enqueue"
 	encoded, err := base.EncodeMessage(msg)
-	fmt.Println("============msg============", msg.CreatedAt, msg.ProcessedAt)
-	fmt.Println("============encoded============", string(encoded))
 	if err != nil {
 		return errors.E(op, errors.Unknown, fmt.Sprintf("cannot encode message: %v", err))
 	}
@@ -143,7 +141,6 @@ func (r *RDB) Enqueue(ctx context.Context, msg *base.TaskMessage) error {
 	if queueSize == 0 {
 		queueSize = base.DefaultQueueSize
 	}
-	fmt.Println("====queue size", queueSize)
 	argv := []interface{}{
 		encoded,
 		msg.ID,
@@ -360,7 +357,6 @@ func (r *RDB) CancelTask(ctx context.Context, queueName, taskID string) (err err
 		base.TaskKeyPrefix(queueName),
 	}
 	n, err := r.runScriptWithErrorCode(ctx, op, cancelTaskCmd, keys, argv...)
-	fmt.Println("res", n)
 	if err != nil {
 		return errors.E(op, errors.Unknown, fmt.Sprintf("redis eval error: %v", err))
 	}
