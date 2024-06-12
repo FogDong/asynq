@@ -81,7 +81,7 @@ func TestCancelTask(t *testing.T) {
 	if n := len(pendingIDs); n != 1 {
 		t.Errorf("Redis LIST %q contains %d IDs, want 1", pendingKey, n)
 	}
-	err = r.CancelTask(ctx, queueName, t1.ID)
+	err = r.CancelTask(queueName, t1.ID)
 	if err != nil {
 		t.Errorf("(*RDB).CancelTask(queueName, t1.ID) = %v, want nil", err)
 	}
@@ -95,16 +95,16 @@ func TestCancelTask(t *testing.T) {
 	if err != nil {
 		t.Errorf("(*RDB).Schedule(msg, time.Now()) = %v, want nil", err)
 	}
-	err = r.CancelTask(ctx, queueName, t2.ID)
+	err = r.CancelTask(queueName, t2.ID)
 	if err != nil {
 		if !strings.Contains(err.Error(), "pending") {
 			t.Errorf("(*RDB).CancelTask(queueName, t2.ID) = %v, want task is not in pending state", err)
 		}
 	}
 
-	err = r.CancelTask(ctx, queueName, "nonexistent-id")
+	err = r.CancelTask(queueName, "nonexistent-id")
 	if err != nil {
-		if !strings.Contains(err.Error(), "not found") {
+		if !strings.Contains(err.Error(), "not find") {
 			t.Errorf("(*RDB).CancelTask(queueName, t2.ID) = %v, want task not found", err)
 		}
 	}

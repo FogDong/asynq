@@ -742,7 +742,7 @@ type Broker interface {
 	Enqueue(ctx context.Context, msg *TaskMessage) error
 	EnqueueUnique(ctx context.Context, msg *TaskMessage, ttl time.Duration) error
 	Dequeue(qnames ...string) (*TaskMessage, time.Time, error)
-	CancelTask(ctx context.Context, qname, taskID string) error
+	CancelTask(qname, taskID string) error
 	Done(ctx context.Context, msg *TaskMessage) error
 	MarkAsComplete(ctx context.Context, msg *TaskMessage) error
 	Requeue(ctx context.Context, msg *TaskMessage) error

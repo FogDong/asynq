@@ -338,45 +338,6 @@ func (r *RDB) Dequeue(qnames ...string) (msg *base.TaskMessage, leaseExpirationT
 	return nil, time.Time{}, errors.E(op, errors.NotFound, errors.ErrNoProcessableTask)
 }
 
-var cancelTaskCmd = redis.NewScript(`
-local taskID = ARGV[1]
-local taskKey = ARGV[2] .. taskID
-
-if redis.call("EXISTS", taskKey) ~= 1 then
-	return 0
-end
-
-if redis.call("HGET", taskKey, "state") ~= "pending" then
-	return 1
-end
-
-redis.call("LREM", KEYS[1], 1, taskID)
-return 2
-`)
-
-// DequeueTask 从指定的队列中删除特定任务并返回任务消息
-func (r *RDB) CancelTask(ctx context.Context, queueName, taskID string) (err error) {
-	var op errors.Op = "rdb.DequeueTask"
-	keys := []string{
-		base.PendingKey(queueName),
-	}
-	argv := []interface{}{
-		taskID,
-		base.TaskKeyPrefix(queueName),
-	}
-	n, err := r.runScriptWithErrorCode(ctx, op, cancelTaskCmd, keys, argv...)
-	if err != nil {
-		return errors.E(op, errors.Unknown, fmt.Sprintf("redis eval error: %v", err))
-	}
-	if n == 0 {
-		return errors.E(op, errors.NotFound, fmt.Sprintf("task %q not found", taskID))
-	}
-	if n == 1 {
-		return errors.E(op, errors.Internal, fmt.Sprintf("task %q is not in pending state", taskID))
-	}
-	return nil
-}
-
 // KEYS[1] -> asynq:{<qname>}:active
 // KEYS[2] -> asynq:{<qname>}:lease
 // KEYS[3] -> asynq:{<qname>}:t:<task_id>
