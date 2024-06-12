@@ -1435,7 +1435,7 @@ local state, group = unpack(redis.call("HMGET", KEYS[1], "state", "group"))
 if state == "active" then
 	return -1
 end
-if state == "pending" then
+if state == "pending" or state == "queue_full" then
 	if redis.call("LREM", ARGV[2] .. state, 0, ARGV[1]) == 0 then
 		return redis.error_reply("task is not found in list: " .. tostring(ARGV[2] .. state))
 	end
