@@ -165,6 +165,7 @@ func (p *processor) start(wg *sync.WaitGroup) {
 // exec pulls a task out of the queue and starts a worker goroutine to
 // process the task.
 func (p *processor) exec() {
+	fmt.Println("============exec==========")
 	select {
 	case <-p.quit:
 		return

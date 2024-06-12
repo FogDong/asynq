@@ -554,6 +554,7 @@ func (r *RDB) MarkAsComplete(ctx context.Context, msg *base.TaskMessage) error {
 	now := r.clock.Now()
 	statsExpireAt := now.Add(statsTTL)
 	msg.CompletedAt = now.Unix()
+	fmt.Println("========mark as complete========", msg.CompletedAt, msg.CreatedAt, msg.ProcessedAt)
 	encoded, err := base.EncodeMessage(msg)
 	if err != nil {
 		return errors.E(op, errors.Unknown, fmt.Sprintf("cannot encode message: %v", err))
