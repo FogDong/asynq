@@ -325,6 +325,14 @@ func (r *RDB) Dequeue(qnames ...string) (msg *base.TaskMessage, leaseExpirationT
 		if msg, err = base.DecodeMessage([]byte(encoded)); err != nil {
 			return nil, time.Time{}, errors.E(op, errors.Internal, fmt.Sprintf("cannot decode message: %v", err))
 		}
+		msg.ProcessedAt = time.Now().Unix()
+		updatedMsg, err := base.EncodeMessage(msg)
+		if err != nil {
+			return nil, time.Time{}, errors.E(op, errors.Internal, fmt.Sprintf("cannot encode updated message: %v", err))
+		}
+		if err = r.client.HSet(context.Background(), base.TaskKey(qname, msg.ID), "msg", updatedMsg).Err(); err != nil {
+			return nil, time.Time{}, errors.E(op, errors.Unknown, fmt.Sprintf("failed to update task message: %v", err))
+		}
 		return msg, leaseExpirationTime, nil
 	}
 	return nil, time.Time{}, errors.E(op, errors.NotFound, errors.ErrNoProcessableTask)
