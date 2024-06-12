@@ -399,7 +399,6 @@ func (c *Client) EnqueueContext(ctx context.Context, task *Task, opts ...Option)
 	}
 	var state base.TaskState
 	if opt.processAt.After(now) {
-		msg.ProcessedAt = opt.processAt.Unix()
 		err = c.schedule(ctx, msg, opt.processAt, opt.uniqueTTL)
 		state = base.TaskStateScheduled
 	} else if opt.group != "" {
@@ -409,7 +408,6 @@ func (c *Client) EnqueueContext(ctx context.Context, task *Task, opts ...Option)
 		state = base.TaskStateAggregating
 	} else {
 		opt.processAt = now
-		msg.ProcessedAt = now.Unix()
 		err = c.enqueue(ctx, msg, opt.uniqueTTL)
 		state = base.TaskStatePending
 	}
