@@ -259,6 +259,12 @@ func SeedCompletedQueue(tb testing.TB, r redis.UniversalClient, entries []base.Z
 	seedRedisZSet(tb, r, base.CompletedKey(qname), entries, base.TaskStateCompleted)
 }
 
+func SeedCancelledQueue(tb testing.TB, r redis.UniversalClient, entries []base.Z, qname string) {
+	tb.Helper()
+	r.SAdd(context.Background(), base.AllQueues, qname)
+	seedRedisZSet(tb, r, base.CancelledKey(qname), entries, base.TaskStateCancelled)
+}
+
 // SeedGroup initializes the group with the given entries.
 func SeedGroup(tb testing.TB, r redis.UniversalClient, entries []base.Z, qname, gname string) {
 	tb.Helper()
@@ -329,6 +335,13 @@ func SeedAllCompletedQueues(tb testing.TB, r redis.UniversalClient, completed ma
 	tb.Helper()
 	for q, entries := range completed {
 		SeedCompletedQueue(tb, r, entries, q)
+	}
+}
+
+func SeedAllCancelledQueues(tb testing.TB, r redis.UniversalClient, cancelled map[string][]base.Z) {
+	tb.Helper()
+	for q, entries := range cancelled {
+		SeedCancelledQueue(tb, r, entries, q)
 	}
 }
 
@@ -475,6 +488,11 @@ func GetLeaseEntries(tb testing.TB, r redis.UniversalClient, qname string) []bas
 func GetCompletedEntries(tb testing.TB, r redis.UniversalClient, qname string) []base.Z {
 	tb.Helper()
 	return getMessagesFromZSetWithScores(tb, r, qname, base.CompletedKey, base.TaskStateCompleted)
+}
+
+func GetCancelledEntries(tb testing.TB, r redis.UniversalClient, qname string) []base.Z {
+	tb.Helper()
+	return getMessagesFromZSetWithScores(tb, r, qname, base.CancelledKey, base.TaskStateCancelled)
 }
 
 // GetGroupEntries returns all scheduled messages and its score in the given queue.
