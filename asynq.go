@@ -182,6 +182,8 @@ func newTaskInfo(msg *base.TaskMessage, state base.TaskState, nextProcessAt time
 		info.State = TaskStateAggregating
 	case base.TaskStateQueueFull:
 		info.State = TaskStateQueueFull
+	case base.TaskStateCancelled:
+		info.State = TaskStateCancelled
 	default:
 		panic(fmt.Sprintf("internal error: unknown state: %d", state))
 	}
@@ -215,6 +217,9 @@ const (
 
 	// Indicates that the task queue is full and the task is waiting to be processed.
 	TaskStateQueueFull
+
+	// Indicates that the task is cancelled and will not be processed.
+	TaskStateCancelled
 )
 
 func (s TaskState) String() string {
@@ -235,6 +240,8 @@ func (s TaskState) String() string {
 		return "aggregating"
 	case TaskStateQueueFull:
 		return "queue_full"
+	case TaskStateCancelled:
+		return "cancelled"
 	}
 	panic("asynq: unknown task state")
 }
