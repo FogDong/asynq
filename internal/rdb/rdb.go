@@ -1332,7 +1332,7 @@ func (r *RDB) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize in
 			for _, msg := range msgs {
 				err := preCleanup(msg.Payload)
 				if err != nil {
-					return err
+					return fmt.Errorf("pre-cleanup failed: %v", err)
 				}
 			}
 		}
