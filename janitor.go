@@ -35,21 +35,23 @@ type janitor struct {
 }
 
 type janitorParams struct {
-	logger    *log.Logger
-	broker    base.Broker
-	queues    []string
-	interval  time.Duration
-	batchSize int
+	logger         *log.Logger
+	broker         base.Broker
+	queues         []string
+	interval       time.Duration
+	batchSize      int
+	preCleanupFunc func(msg *base.TaskMessage) error
 }
 
 func newJanitor(params janitorParams) *janitor {
 	return &janitor{
-		logger:      params.logger,
-		broker:      params.broker,
-		done:        make(chan struct{}),
-		queues:      params.queues,
-		avgInterval: params.interval,
-		batchSize:   params.batchSize,
+		logger:         params.logger,
+		broker:         params.broker,
+		done:           make(chan struct{}),
+		queues:         params.queues,
+		avgInterval:    params.interval,
+		batchSize:      params.batchSize,
+		preCleanupFunc: params.preCleanupFunc,
 	}
 }
 
