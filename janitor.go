@@ -30,6 +30,8 @@ type janitor struct {
 
 	// number of tasks to be deleted when janitor runs to delete the expired completed tasks.
 	batchSize int
+
+	preCleanupFunc func(msg *base.TaskMessage) error
 }
 
 type janitorParams struct {
@@ -78,7 +80,7 @@ func (j *janitor) start(wg *sync.WaitGroup) {
 
 func (j *janitor) exec() {
 	for _, qname := range j.queues {
-		if err := j.broker.DeleteExpiredCompletedAndCancelledTasks(qname, j.batchSize); err != nil {
+		if err := j.broker.DeleteExpiredCompletedAndCancelledTasks(qname, j.batchSize, j.preCleanupFunc); err != nil {
 			j.logger.Errorf("Failed to delete expired completed tasks from queue %q: %v",
 				qname, err)
 		}

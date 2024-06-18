@@ -788,7 +788,7 @@ type Broker interface {
 	ReclaimStaleAggregationSets(qname string) error
 
 	// Task retention related method
-	DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize int) error
+	DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize int, preCleanupFunc func(msg *TaskMessage) error) error
 
 	// Lease related methods
 	ListLeaseExpired(cutoff time.Time, qnames ...string) ([]*TaskMessage, error)

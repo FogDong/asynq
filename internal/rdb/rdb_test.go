@@ -2684,7 +2684,7 @@ func TestDeleteExpiredCompletedAndCancelledTasks(t *testing.T) {
 		h.SeedAllCompletedQueues(t, r.client, tc.completed)
 		h.SeedAllCancelledQueues(t, r.client, tc.cancelled)
 
-		if err := r.DeleteExpiredCompletedAndCancelledTasks(tc.qname, 100); err != nil {
+		if err := r.DeleteExpiredCompletedAndCancelledTasks(tc.qname, 100, nil); err != nil {
 			t.Errorf("DeleteExpiredCompletedTasks(%q, 100) failed: %v", tc.qname, err)
 			continue
 		}

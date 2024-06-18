@@ -1322,8 +1322,20 @@ return table.getn(completed_ids) + table.getn(cancelled_ids)`)
 
 // DeleteExpiredCompletedAndCancelledTasks checks for any expired tasks in the given queue's completed set,
 // and delete all expired tasks.
-func (r *RDB) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize int) error {
+func (r *RDB) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize int, preCleanup func(msg *base.TaskMessage) error) error {
 	for {
+		if preCleanup != nil {
+			msgs, err := r.ListExpiredCompletedAndCancelledTasks(qname, batchSize)
+			if err != nil {
+				return err
+			}
+			for _, msg := range msgs {
+				err := preCleanup(msg)
+				if err != nil {
+					return err
+				}
+			}
+		}
 		n, err := r.deleteExpiredCompletedAndCancelledTasks(qname, batchSize)
 		if err != nil {
 			return err
@@ -1332,6 +1344,46 @@ func (r *RDB) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize in
 			return nil
 		}
 	}
+}
+
+// KEYS[1] -> asynq:{<qname>}:completed
+// KEYS[2] -> asynq:{<qname>}:cancelled
+var listExpiredCompletedAndCancelledTasksCmd = redis.NewScript(`
+local res = {}
+local function list_expired_tasks(set_key)
+  local ids = redis.call("ZRANGEBYSCORE", set_key, "-inf", ARGV[1], "LIMIT", 0, tonumber(ARGV[3]))
+  for _, id in ipairs(ids) do
+		local key = ARGV[2] .. id
+		local v = redis.call("HGET", key, "msg")
+		if v then
+			table.insert(res, v)
+		end
+  end
+end
+return list_expired_tasks(KEYS[1]) + list_expired_tasks(KEYS[2])
+`)
+
+// ListExpiredCompletedAndCancelledTasks returns a list of task messages with an expired completed or cancelled state.
+func (r *RDB) ListExpiredCompletedAndCancelledTasks(qname string, batchSize int) ([]*base.TaskMessage, error) {
+	var op errors.Op = "rdb.ListExpiredCompletedAndCancelledTasks"
+	var msgs []*base.TaskMessage
+	res, err := listExpiredCompletedAndCancelledTasksCmd.Run(context.Background(), r.client,
+		[]string{base.CompletedKey(qname), base.CancelledKey(qname)}).Result()
+	if err != nil {
+		return nil, errors.E(op, errors.Internal, fmt.Sprintf("redis eval error: %v", err))
+	}
+	data, err := cast.ToStringSliceE(res)
+	if err != nil {
+		return nil, errors.E(op, errors.Internal, fmt.Sprintf("cast error: Lua script returned unexpected value: %v", res))
+	}
+	for _, s := range data {
+		msg, err := base.DecodeMessage([]byte(s))
+		if err != nil {
+			return nil, errors.E(op, errors.Internal, fmt.Sprintf("cannot decode message: %v", err))
+		}
+		msgs = append(msgs, msg)
+	}
+	return msgs, nil
 }
 
 // deleteExpiredCompletedAndCancelledTasks runs the lua script to delete expired deleted task with the specified
