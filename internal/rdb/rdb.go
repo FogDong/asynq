@@ -1350,17 +1350,22 @@ func (r *RDB) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize in
 // KEYS[2] -> asynq:{<qname>}:cancelled
 var listExpiredCompletedAndCancelledTasksCmd = redis.NewScript(`
 local res = {}
+
 local function list_expired_tasks(set_key)
   local ids = redis.call("ZRANGEBYSCORE", set_key, "-inf", ARGV[1], "LIMIT", 0, tonumber(ARGV[3]))
   for _, id in ipairs(ids) do
-		local key = ARGV[2] .. id
-		local v = redis.call("HGET", key, "msg")
-		if v then
-			table.insert(res, v)
-		end
+    local key = ARGV[2] .. id
+    local v = redis.call("HGET", key, "msg")
+    if v then
+      table.insert(res, v)
+    end
   end
 end
-return list_expired_tasks(KEYS[1]) + list_expired_tasks(KEYS[2])
+
+list_expired_tasks(KEYS[1])
+list_expired_tasks(KEYS[2])
+
+return res
 `)
 
 // ListExpiredCompletedAndCancelledTasks returns a list of task messages with an expired completed or cancelled state.
