@@ -145,7 +145,7 @@ func (tb *TestBroker) ForwardIfReady(qnames ...string) error {
 	return tb.real.ForwardIfReady(qnames...)
 }
 
-func (tb *TestBroker) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize int, preCleanupFunc func(msg *base.TaskMessage) error) error {
+func (tb *TestBroker) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize int, preCleanupFunc func(payload []byte) error) error {
 	tb.mu.Lock()
 	defer tb.mu.Unlock()
 	if tb.sleeping {

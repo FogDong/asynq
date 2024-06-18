@@ -1322,7 +1322,7 @@ return table.getn(completed_ids) + table.getn(cancelled_ids)`)
 
 // DeleteExpiredCompletedAndCancelledTasks checks for any expired tasks in the given queue's completed set,
 // and delete all expired tasks.
-func (r *RDB) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize int, preCleanup func(msg *base.TaskMessage) error) error {
+func (r *RDB) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize int, preCleanup func(payload []byte) error) error {
 	for {
 		if preCleanup != nil {
 			msgs, err := r.ListExpiredCompletedAndCancelledTasks(qname, batchSize)
@@ -1330,7 +1330,7 @@ func (r *RDB) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize in
 				return err
 			}
 			for _, msg := range msgs {
-				err := preCleanup(msg)
+				err := preCleanup(msg.Payload)
 				if err != nil {
 					return err
 				}

@@ -251,7 +251,7 @@ type Config struct {
 	// Make sure to not put a big number as the batch size to prevent a long-running script.
 	JanitorBatchSize int
 
-	JanitorPreCleanupFunc func(msg *base.TaskMessage) error
+	JanitorPreCleanupFunc func(payload []byte) error
 }
 
 // GroupAggregator aggregates a group of tasks into one before the tasks are passed to the Handler.

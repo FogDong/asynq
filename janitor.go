@@ -31,7 +31,7 @@ type janitor struct {
 	// number of tasks to be deleted when janitor runs to delete the expired completed tasks.
 	batchSize int
 
-	preCleanupFunc func(msg *base.TaskMessage) error
+	preCleanupFunc func(payload []byte) error
 }
 
 type janitorParams struct {
@@ -40,7 +40,7 @@ type janitorParams struct {
 	queues         []string
 	interval       time.Duration
 	batchSize      int
-	preCleanupFunc func(msg *base.TaskMessage) error
+	preCleanupFunc func(payload []byte) error
 }
 
 func newJanitor(params janitorParams) *janitor {
