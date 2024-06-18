@@ -1324,6 +1324,7 @@ return table.getn(completed_ids) + table.getn(cancelled_ids)`)
 // and delete all expired tasks.
 func (r *RDB) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize int, preCleanup func(payload []byte) error) error {
 	for {
+		errs := make([]string, 0)
 		if preCleanup != nil {
 			msgs, err := r.ListExpiredCompletedAndCancelledTasks(qname, batchSize)
 			if err != nil {
@@ -1332,13 +1333,16 @@ func (r *RDB) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize in
 			for _, msg := range msgs {
 				err := preCleanup(msg.Payload)
 				if err != nil {
-					return fmt.Errorf("pre-cleanup failed: %v", err)
+					errs = append(errs, err.Error())
 				}
 			}
 		}
 		n, err := r.deleteExpiredCompletedAndCancelledTasks(qname, batchSize)
 		if err != nil {
 			return fmt.Errorf("delete failed: %v", err)
+		}
+		if len(errs) > 0 {
+			return fmt.Errorf("pre-cleanup failed: %v", errs)
 		}
 		if n == 0 {
 			return nil
