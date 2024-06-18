@@ -1327,7 +1327,7 @@ func (r *RDB) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize in
 		if preCleanup != nil {
 			msgs, err := r.ListExpiredCompletedAndCancelledTasks(qname, batchSize)
 			if err != nil {
-				return err
+				return fmt.Errorf("list expired tasks failed: %v", err)
 			}
 			for _, msg := range msgs {
 				err := preCleanup(msg.Payload)
@@ -1338,7 +1338,7 @@ func (r *RDB) DeleteExpiredCompletedAndCancelledTasks(qname string, batchSize in
 		}
 		n, err := r.deleteExpiredCompletedAndCancelledTasks(qname, batchSize)
 		if err != nil {
-			return err
+			return fmt.Errorf("delete failed: %v", err)
 		}
 		if n == 0 {
 			return nil
@@ -1372,8 +1372,16 @@ return res
 func (r *RDB) ListExpiredCompletedAndCancelledTasks(qname string, batchSize int) ([]*base.TaskMessage, error) {
 	var op errors.Op = "rdb.ListExpiredCompletedAndCancelledTasks"
 	var msgs []*base.TaskMessage
-	res, err := listExpiredCompletedAndCancelledTasksCmd.Run(context.Background(), r.client,
-		[]string{base.CompletedKey(qname), base.CancelledKey(qname)}).Result()
+	keys := []string{
+		base.CompletedKey(qname),
+		base.CancelledKey(qname),
+	}
+	argv := []interface{}{
+		r.clock.Now().Unix(),
+		base.TaskKeyPrefix(qname),
+		batchSize,
+	}
+	res, err := listExpiredCompletedAndCancelledTasksCmd.Run(context.Background(), r.client, keys, argv...).Result()
 	if err != nil {
 		return nil, errors.E(op, errors.Internal, fmt.Sprintf("redis eval error: %v", err))
 	}
