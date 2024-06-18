@@ -128,7 +128,13 @@ type TaskInfo struct {
 	// Zero value (i.e. time.Time{}) indicates no value.
 	CompletedAt time.Time
 
+	// ProcessedAt is the time when the task is processed.
+	// Zero value (i.e. time.Time{}) indicates no value.
 	ProcessedAt time.Time
+
+	// CancelledAt is the time when the task is cancelled.
+	// Zero value (i.e. time.Time{}) indicates no value.
+	CancelledAt time.Time
 
 	// Result holds the result data associated with the task.
 	// Use ResultWriter to write result data from the Handler.
@@ -162,6 +168,7 @@ func newTaskInfo(msg *base.TaskMessage, state base.TaskState, nextProcessAt time
 		CreatedAt:     fromUnixTimeOrZero(msg.CreatedAt),
 		CompletedAt:   fromUnixTimeOrZero(msg.CompletedAt),
 		ProcessedAt:   fromUnixTimeOrZero(msg.ProcessedAt),
+		CancelledAt:   fromUnixTimeOrZero(msg.CancelledAt),
 		Result:        result,
 	}
 
