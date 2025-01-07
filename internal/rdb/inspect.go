@@ -1417,10 +1417,13 @@ func (r *RDB) archiveAll(src, dst, qname string) (int64, error) {
 // KEYS[2] -> asynq:{<qname>}:canceled
 // KEYS[3] -> asynq:{<qname>}:pending
 // KEYS[4] -> asynq:{<qname>}:queue_full
+// KEYS[5] -> asynq:{<qname>}:active
+// KEYS[6] -> asynq:{<qname>}:scheduled
 // --
 // ARGV[1] -> task ID
 // ARGV[2] -> task expiration time in unix time
 // ARGV[3] -> task message data
+// ARGV[4] -> force flag
 //
 // Output:
 // Numeric code indicating the status:
@@ -1434,7 +1437,7 @@ if redis.call("EXISTS", KEYS[1]) == 0 then
 end
 
 local state = redis.call("HGET", KEYS[1], "state")
-if state ~= "pending" and state ~= "queue_full" then
+if ARGV[4] ~= "1" and state ~= "pending" and state ~= "queue_full" then
     return -1
 end
 
@@ -1446,6 +1449,14 @@ elseif state == "queue_full" then
     if redis.call("LREM", KEYS[4], 0, ARGV[1]) == 0 then
         return 0
     end
+elseif state == "active" then
+		if redis.call("LREM", KEYS[5], 0, ARGV[1]) == 0 then
+			return 0
+		end
+elseif state == "scheduled" then
+		if redis.call("ZREM", KEYS[6], ARGV[1]) == 0 then
+			return 0
+		end
 end
 
 if redis.call("ZADD", KEYS[2], ARGV[2], ARGV[1]) ~= 1 then
@@ -1457,7 +1468,7 @@ return 1
 `)
 
 // CancelTask removes the task from the queue.
-func (r *RDB) CancelTask(qname, id string) error {
+func (r *RDB) CancelTask(qname, id string, force bool) error {
 	var op errors.Op = "rdb.CancelTask"
 	task, err := r.GetTaskInfo(qname, id)
 	if err != nil {
@@ -1475,11 +1486,14 @@ func (r *RDB) CancelTask(qname, id string) error {
 		base.CanceledKey(msg.Queue),
 		base.PendingKey(msg.Queue),
 		base.QueueFullKey(msg.Queue),
+		base.ActiveKey(msg.Queue),
+		base.ScheduledKey(msg.Queue),
 	}
 	argv := []interface{}{
 		msg.ID,
 		now.Unix() + msg.Retention,
 		encoded,
+		force,
 	}
 	n, err := r.runScriptWithErrorCode(context.Background(), op, cancelTaskCmd, keys, argv...)
 	if err != nil {

@@ -316,11 +316,11 @@ func (tb *TestBroker) FindAndPendingQueueFullTask(ctx context.Context, queue str
 	return tb.real.FindAndPendingQueueFullTask(ctx, queue)
 }
 
-func (tb *TestBroker) CancelTask(qname, taskID string) error {
+func (tb *TestBroker) CancelTask(qname, taskID string, force bool) error {
 	tb.mu.Lock()
 	defer tb.mu.Unlock()
 	if tb.sleeping {
 		return errRedisDown
 	}
-	return tb.real.CancelTask(qname, taskID)
+	return tb.real.CancelTask(qname, taskID, force)
 }

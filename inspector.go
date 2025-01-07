@@ -600,11 +600,11 @@ func (i *Inspector) DeleteTask(queue, id string) error {
 
 }
 
-func (i *Inspector) CancelTask(queue, id string) error {
+func (i *Inspector) CancelTask(queue, id string, force bool) error {
 	if err := base.ValidateQueueName(queue); err != nil {
 		return fmt.Errorf("asynq: %v", err)
 	}
-	err := i.rdb.CancelTask(queue, id)
+	err := i.rdb.CancelTask(queue, id, force)
 	switch {
 	case errors.IsQueueNotFound(err):
 		return fmt.Errorf("asynq: %w", ErrQueueNotFound)
